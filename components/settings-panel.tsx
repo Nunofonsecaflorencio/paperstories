@@ -5,13 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { CollageSettings } from "@/app/page";
 import { Settings } from "lucide-react";
 
@@ -24,7 +17,10 @@ export function SettingsPanel({
 	settings,
 	onSettingsChange,
 }: SettingsPanelProps) {
-	const updateSetting = (key: keyof CollageSettings, value: any) => {
+	const updateSetting = <K extends keyof CollageSettings>(
+		key: K,
+		value: CollageSettings[K]
+	) => {
 		onSettingsChange({ ...settings, [key]: value });
 	};
 
@@ -110,7 +106,7 @@ export function SettingsPanel({
 					<Checkbox
 						id="show-captions"
 						checked={settings.showCaptions}
-						onCheckedChange={(checked) =>
+						onCheckedChange={(checked: boolean) =>
 							updateSetting("showCaptions", checked)
 						}
 					/>

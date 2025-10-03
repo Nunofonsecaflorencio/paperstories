@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { SettingsPanel } from "@/components/settings-panel";
-import { CollagePreview } from "@/components/collage-preview";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
@@ -12,10 +11,10 @@ export interface ImageData {
 	id: string;
 	file: File;
 	url: string;
-	metadata: {
+	metadata?: {
 		dateTime?: string;
-		width: number;
-		height: number;
+		width?: number;
+		height?: number;
 	};
 	aspectRatio: string;
 	crop: {
