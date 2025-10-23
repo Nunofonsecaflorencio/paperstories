@@ -7,6 +7,8 @@ from fractions import Fraction
 from pathlib import Path
 from PIL import Image as PILImage
 import shutil
+from itertools import islice
+from docxcompose.composer import Composer
 
 # ---------- Constants ----------
 TEMPLATES = {
@@ -32,6 +34,15 @@ def format_exposure(exposure) -> str:
         frac = Fraction(exposure).limit_denominator(1000)
         return f"{frac.numerator}/{frac.denominator}"
     return str(exposure)
+
+def chunked(iterable, size):
+    """Yield successive chunks from iterable of given size."""
+    it = iter(iterable)
+    while True:
+        chunk = list(islice(it, size))
+        if not chunk:
+            break
+        yield chunk
 
 def correct_orientation(image_path: Path, orientation: int) -> Path:
     """Rotate image based on EXIF orientation and save to temp folder."""
@@ -90,16 +101,36 @@ def main():
     output_pdf = Path("output/story.pdf")
 
     template_info = TEMPLATES[template_key]
-    doc = DocxTemplate(template_info['file_path'])
-
-    # Gather all images (JPG/PNG) and sort
     images = sorted(images_folder.glob("*.JPG")) + sorted(images_folder.glob("*.PNG"))
-    context = generate_context(doc, template_info, images)
 
-    doc.render(context)
-    doc.save(output_docx)
+    # Split images into pages
+    pages = list(chunked(images, template_info['count']))
+
+    if not pages:
+        print("No images found.")
+        return
+
+    # --- First page ---
+    first_doc = DocxTemplate(template_info['file_path'])
+    context = generate_context(first_doc, template_info, pages[0])
+    first_doc.render(context)
+    first_doc.save(output_docx)
+    composer = Composer(first_doc)
+
+    # --- Additional pages ---
+    for chunk in pages[1:]:
+        new_doc = DocxTemplate(template_info['file_path'])
+        context = generate_context(new_doc, template_info, chunk)
+        new_doc.render(context)
+        temp_page = TEMP_DIR / f"page_{pages.index(chunk)+1}.docx"
+        new_doc.save(temp_page)
+        composer.append(new_doc)
+
+    composer.save(output_docx)
+
+    # Convert to PDF
     convert(output_docx, output_pdf)
-    print(f"Generated PDF: {output_pdf}")
+
     
     # ---------- Cleanup ----------
     Path(output_docx).unlink()
