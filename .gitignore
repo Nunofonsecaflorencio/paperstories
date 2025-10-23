@@ -119,3 +119,7 @@ dmypy.json
 
 #Pycharm IDE
 .idea
+
+images/
+output/
+temp/
