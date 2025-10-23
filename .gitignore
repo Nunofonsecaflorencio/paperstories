@@ -123,3 +123,4 @@ dmypy.json
 images/
 output/
 temp/
+temp_uploads/

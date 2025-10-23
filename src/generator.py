@@ -4,7 +4,7 @@ from docx2pdf import convert
 from pathlib import Path
 import shutil
 
-from .utils import get_metadata, format_datetime, format_exposure, correct_orientation, chunked
+from .utils import get_metadata, format_datetime, format_exposure, correct_orientation, chunked, convert_to_jpeg_if_needed
 from .constants import TEMP_DIR
 
 def generate_context(doc: DocxTemplate, template_info: dict, images: list[Path]) -> dict:
@@ -14,8 +14,10 @@ def generate_context(doc: DocxTemplate, template_info: dict, images: list[Path])
     for i, image_path in enumerate(images, start=1):
         if i > template_info['count']:
             break
-
+        
+        converted_path = convert_to_jpeg_if_needed(image_path, TEMP_DIR)
         metadata = get_metadata(image_path)
+        
         orientation = metadata.get('orientation')
         final_image_path = correct_orientation(image_path, orientation) if orientation else image_path
 

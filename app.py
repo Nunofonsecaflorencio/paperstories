@@ -16,7 +16,7 @@ template_key = st.selectbox("Choose a template", list(TEMPLATES.keys()))
 
 # --- File upload ---
 uploaded_files = st.file_uploader(
-    "Upload your images (JPG or PNG)", 
+    "Upload your images", 
     type=["jpg", "jpeg", "png"], 
     accept_multiple_files=True
 )
