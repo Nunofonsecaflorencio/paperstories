@@ -10,14 +10,12 @@ import shutil
 
 # ---------- Constants ----------
 TEMPLATES = {
-    '3x1': {'file_path': Path("templates/16by9-3x1.docx"), 'image_width': Inches(5), 'image_height': Inches(2.78), 'count': 3*1, 'aspect_ratio': 16/9},
-    '3x3': {'file_path': Path("templates/4by5-3x3.docx"), 'image_width': Inches(2.21), 'image_height': Inches(2.78), 'count': 3*3, 'aspect_ratio': 4/5},
-    '2x3': {'file_path': Path("templates/5by4-2x3.docx"), 'image_width': Inches(3.36), 'image_height': Inches(2.71), 'count': 2*3, 'aspect_ratio': 5/4},
+    'landscape_3x1': {'file_path': Path("templates/16by9-3x1.docx"), 'image_width': Inches(5), 'image_height': Inches(2.78), 'count': 3*1, 'aspect_ratio': 16/9},
+    'portrait_3x3': {'file_path': Path("templates/4by5-3x3.docx"), 'image_width': Inches(2.21), 'image_height': Inches(2.78), 'count': 3*3, 'aspect_ratio': 4/5},
+    'portrait_2x3': {'file_path': Path("templates/5by4-2x3.docx"), 'image_width': Inches(3.36), 'image_height': Inches(2.71), 'count': 2*3, 'aspect_ratio': 5/4},
 }
 
 TEMP_DIR = Path("temp")
-if TEMP_DIR.exists():
-    shutil.rmtree(TEMP_DIR)
 TEMP_DIR.mkdir(exist_ok=True)
 
 # ---------- Utility Functions ----------
@@ -86,7 +84,7 @@ def generate_context(doc: DocxTemplate, template_info: dict, images: list[Path])
 
 # ---------- Main ----------
 def main():
-    template_key = '2x3'
+    template_key = 'landscape_3x1'
     images_folder = Path("images")
     output_docx = Path("output/story.docx")
     output_pdf = Path("output/story.pdf")
@@ -101,7 +99,13 @@ def main():
     doc.render(context)
     doc.save(output_docx)
     convert(output_docx, output_pdf)
-    print(f"Generated DOCX: {output_docx} and PDF: {output_pdf}")
+    print(f"Generated PDF: {output_pdf}")
+    
+    # ---------- Cleanup ----------
+    Path(output_docx).unlink()
+    if TEMP_DIR.exists():
+        shutil.rmtree(TEMP_DIR)
+        print(f"Cleaned up temporary folder: {TEMP_DIR}")
 
 if __name__ == "__main__":
     main()
