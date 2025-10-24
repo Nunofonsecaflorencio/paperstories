@@ -1,58 +1,65 @@
-import streamlit as st
+from flask import Flask, render_template, request, send_file, redirect, url_for, flash
 from pathlib import Path
 from src.constants import TEMPLATES
 from src.generator import generate_story
-from src.cleanup import cleanup_files, delayed_cleanup
+from src.cleanup import cleanup_files
+import os
+from werkzeug.utils import secure_filename
 
-import pythoncom
-pythoncom.CoInitialize()
+app = Flask(__name__)
+app.secret_key = "your-secret-key"  # Needed for flash messages
 
-# ---------------- Streamlit UI ----------------
-st.set_page_config(page_title="Paperstories", page_icon="📄", layout="centered")
-st.title("📸 Memories Generator")
+# --- Paths ---
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = BASE_DIR / "output"
+TEMP_DIR = BASE_DIR / "temp_uploads"
+OUTPUT_DIR.mkdir(exist_ok=True)
+TEMP_DIR.mkdir(exist_ok=True)
 
 
-template_key = st.selectbox("Choose a template", list(TEMPLATES.keys()))
+# --- Routes ---
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        template_key = request.form.get("template")
+        uploaded_files = request.files.getlist("images")
 
-# --- File upload ---
-uploaded_files = st.file_uploader(
-    "Upload your images", 
-    type=["jpg", "jpeg", "png"], 
-    accept_multiple_files=True
-)
+        if not uploaded_files or uploaded_files[0].filename == "":
+            flash("Please upload at least one image.", "warning")
+            return redirect(url_for("index"))
 
-# --- Output directory ---
-output_dir = Path("output")
-output_dir.mkdir(exist_ok=True)
+        # Save uploaded images
+        image_paths = []
+        for file in uploaded_files:
+            filename = secure_filename(file.filename)
+            file_path = TEMP_DIR / filename
+            file.save(file_path)
+            image_paths.append(file_path)
 
-# --- Generate Button ---
-if st.button("Generate Story PDF"):
-    if not uploaded_files:
-        st.warning("Please upload at least one image.")
-    else:
-        with st.spinner("Generating PDF..."):
-            # Save uploaded images temporarily
-            image_paths = []
-            temp_dir = Path("temp_uploads")
-            temp_dir.mkdir(exist_ok=True)
-            
-            for uploaded in uploaded_files:
-                img_path = temp_dir / uploaded.name
-                with open(img_path, "wb") as f:
-                    f.write(uploaded.getbuffer())
-                image_paths.append(img_path)
-            
-            # Generate story
+        # Generate story
+        cleanup_files(OUTPUT_DIR)
+
+        try:
             template_info = TEMPLATES[template_key]
-            pdf_path = generate_story(template_info, image_paths, output_dir)
-            
-            # Schedule cleanup asynchronously
-            delayed_cleanup(output_dir / "story.docx", temp_dir)
-        
-        st.success(f"✅ PDF generated successfully!")
-        st.download_button(
-            label="📥 Download PDF",
-            data=open(pdf_path, "rb").read(),
-            file_name=pdf_path.name,
-            mime="application/pdf"
-        )
+            pdf_path = generate_story(template_info, image_paths, OUTPUT_DIR)
+
+            # Schedule cleanup
+            # delayed_cleanup(OUTPUT_DIR / "story.docx", TEMP_DIR)
+            cleanup_files(TEMP_DIR)
+            return send_file(
+                pdf_path,
+                as_attachment=True,
+                download_name=pdf_path.name,
+                mimetype="application/pdf",
+            )
+
+        except Exception as e:
+            flash(f"Error: {e}", "danger")
+            return redirect(url_for("index"))
+
+    # GET request
+    return render_template("index.html", templates=TEMPLATES)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
