@@ -43,7 +43,7 @@ def generate_context(
                     doc, str(final_image_path), height=template_info["image_height"]
                 )
 
-        dt_value = metadata.get("datetime") or metadata.get("datetime_original")
+        dt_value = metadata.get("datetime_original")
         if dt_value:
             context[f"date{i}"] = format_datetime(dt_value)
 
