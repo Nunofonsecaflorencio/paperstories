@@ -41,16 +41,18 @@ def index():
 
         try:
             template_info = TEMPLATES[template_key]
-            pdf_path = generate_story(template_info, image_paths, OUTPUT_DIR)
+            file_path = generate_story(
+                template_info, image_paths, OUTPUT_DIR, convert_to_pdf=False
+            )
 
             # Schedule cleanup
             # delayed_cleanup(OUTPUT_DIR / "story.docx", TEMP_DIR)
             cleanup_files(TEMP_DIR)
             return send_file(
-                pdf_path,
+                file_path,
                 as_attachment=True,
-                download_name=pdf_path.name,
-                mimetype="application/pdf",
+                download_name=file_path.name,
+                # mimetype="application/pdf",
             )
 
         except Exception as e:
